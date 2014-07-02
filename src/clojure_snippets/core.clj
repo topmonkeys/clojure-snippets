@@ -50,3 +50,4 @@
   "Returns a set of co-ordinates with their co-ordinates bit modified with the function passed."
   [max-x max-y bit-fn]
   (for [x (range max-x) y (range max-y)] [x y (bit-fn x y)]))
+
