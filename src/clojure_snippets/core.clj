@@ -1,13 +1,11 @@
-(ns clojure-snippets.core)
+(ns clojure-snippets.core
+  (:require [clojure.java.javadoc]
+            [clojure.string :as s]))
 
 (defn foo
   "I don't do a whole lot."
   [x]
   (println x "Hello, World!"))
-
-(ns clojure-snippets.core.core
-  (:require [clojure.java.javadoc]
-            [clojure.string :as s]))
 
 (defn numbers-down-from
   "Returns a vector of numbers from the number provided until zero."
@@ -47,7 +45,8 @@
     
 
 (defn bit-modified-pixels
-  "Returns a set of co-ordinates with their co-ordinates bit modified with the function passed."
+  "Returns a set of co-ordinates with their co-ordinates bit modified with the 
+  function passed."
   [max-x max-y bit-fn]
   (for [x (range max-x) y (range max-y)] [x y (bit-fn x y)]))
 
