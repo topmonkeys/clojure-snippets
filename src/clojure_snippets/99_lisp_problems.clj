@@ -111,5 +111,48 @@
        (let [s (remove-consecutive-items (first l) l)]
          (remove-consecutive-duplicates (seq s) (conj result (first l)))))))
     
+; P09 (**) Pack consecutive duplicates of list elements into sublists.
+; If a list contains repeated elements they should be placed in separate 
+; sublists.
+; Example:
+; * (pack '(a a a a b c c a a d e e e e))
+; ((A A A A) (B) (C C) (A A) (D) (E E E E))
+(defn pack-consecutive-items
+  "Packs one or more consecutive items at the beginning of the list."
+  [i l]
+  (loop [item i s l result []]
+    (if-not (and (seq s) (= item (first s)))
+      result
+      (recur item (rest s) (conj result (first s))))))
 
+(defn pack-consecutive-duplicates
+  "Packs consecutive duplicates of a list."
+  ([l] (pack-consecutive-duplicates l []))
+  ([l result]
+     (if-not (seq l)
+       result
+       (let [s (pack-consecutive-items (first l) l)
+             t (remove-consecutive-items (first l) l)]
+         (pack-consecutive-duplicates t (conj result s))))))
 
+; P10 (*) Run-length encoding of a list.
+; Use the result of problem P09 to implement the so-called run-length encoding 
+; data compression method. Consecutive duplicates of elements are encoded as 
+; lists (N E) where N is the number of duplicates of the element E.
+; Example:
+; * (encode '(a a a a b c c a a d e e e e))
+; ((4 A) (1 B) (2 C) (2 A) (1 D)(4 E))
+(defn run-length-encode
+  "Returns the run-length encoded list."
+  [l]
+  (if-not (seq l)
+    l
+    (let [s (pack-consecutive-duplicates l)]
+      (loop [t s result []]
+        (if-not (seq t)
+          result
+          (recur (rest t) 
+                 (conj result (list (number-of-items (first t)) 
+                                    (first (first t))))))))))
+
+  
