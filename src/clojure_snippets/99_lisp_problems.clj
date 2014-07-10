@@ -155,4 +155,253 @@
                  (conj result (list (number-of-items (first t)) 
                                     (first (first t))))))))))
 
-  
+;  P11 (*) Modified run-length encoding.
+; Modify the result of problem P10 in such a way that if an element has no 
+; duplicates it is simply copied into the result list. Only elements with 
+; duplicates are transferred as (N E) lists.
+; Example:
+; * (encode-modified '(a a a a b c c a a d e e e e))
+; ((4 A) B (2 C) (2 A) D (4 E)) 
+(defn run-length-encode-modified
+  "Returns the run-length encoded list."
+  [l]
+  (if-not (seq l)
+    l
+    (let [s (pack-consecutive-duplicates l)]
+      (loop [t s result []]
+        (if-not (seq t)
+          result
+          (recur (rest t) 
+                 (if (= (number-of-items (first t)) 1)
+                   (conj result (first (first t)))
+                   (conj result (list (number-of-items (first t)) 
+                                      (first (first t)))))))))))
+
+; P12 (**) Decode a run-length encoded list.
+; Given a run-length code list generated as specified in problem P11. Construct 
+; its uncompressed version.
+(defn run-length-decode
+  "Decodes the run length encoded list."
+  [l]
+  (if-not (seq l)
+    l
+    (loop [s l result []]
+      (if-not (seq s)
+        result
+        (if-not (seq? (first s))
+          (recur (rest s) (conj result (first s)))
+          (recur (rest s) (into result 
+                                (repeat (first (first s)) 
+                                        (second (first s))))))))))
+
+; P13 (**) Run-length encoding of a list (direct solution).
+; Implement the so-called run-length encoding data compression method directly. 
+; I.e. don't explicitly create the sublists containing the duplicates, as in 
+; problem P09, but only count them. As in problem P11, simplify the result list 
+; by replacing the singleton lists (1 X) by X.
+; Example:
+; * (encode-direct '(a a a a b c c a a d e e e e))
+; ((4 A) B (2 C) (2 A) D (4 E))
+(defn number-of-duplicates
+  "Returns the number of consecutive duplicates at the beginning of a list."
+  [l i]
+  (loop [s l count 0]
+    (if-not (seq s)
+      count
+      (if-not (= i (first s))
+        count
+        (recur (rest s) (inc count))))))
+
+(defn run-length-encode-simple
+  "Returns the run-length encoded list."
+  ([l] (run-length-encode-simple l []))
+  ([l result]
+     (if-not (seq l)
+       result
+       (let [n (number-of-duplicates l (first l))
+             s (drop n l)]
+         (run-length-encode-simple s 
+                                   (if (= n 1)
+                                     (conj result (first l))
+                                     (conj result (list n (first l)))))))))
+
+; P14 (*) Duplicate the elements of a list.
+; Example:
+; * (dupli '(a b c c d))
+; (A A B B C C C C D D)
+(defn create-duplicates
+  "Creates a duplicate of every element."
+  [l]
+  (loop [s l result []]
+    (if-not (seq s)
+      result
+      (recur (rest s) (conj result (first s) (first s))))))
+
+; P15 (**) Replicate the elements of a list a given number of times.
+; Example:
+; * (repli '(a b c) 3)
+; (A A A B B B C C C)
+(defn create-repeated-elements
+  "Creates repeated elements of every element in a list."
+  [l n]
+  (loop [s l result []]
+    (if-not (seq s)
+      result
+      (recur (rest s) (into result (repeat n (first s)))))))
+
+; P16 (**) Drop every N'th element from a list.
+; Example:
+; * (drop '(a b c d e f g h i k) 3)
+; (A B D E G H K)
+(defn drop-every-nth-element
+  "Drops every nth element from the list."
+  [l n]
+  (loop [s l result [] index 0]
+    (if-not (seq s)
+      result
+      (recur (rest s)
+             (if-not (and (not= index 0) (= (mod index n) (dec n)))
+               (conj result (first s))
+               result)
+             (inc index)))))
+               
+; P17 (*) Split a list into two parts; the length of the first part is given.
+; Do not use any predefined predicates.
+; Example:
+; * (split '(a b c d e f g h i k) 3)
+; ( (A B C) (D E F G H I K))
+(defn split-into-two
+  "Splits a list into two parts. The first part's length is provided."
+  ([l n]
+     (loop [s l index 0 first-part [] second-part []]
+       (if-not (seq s)
+         (list first-part second-part)
+         (if (<= index (dec n))
+           (recur (rest s) (inc index) (conj first-part (first s)) second-part)
+           (recur (rest s) 
+                  (inc index) 
+                  first-part 
+                  (conj second-part (first s))))))))
+
+; P18 (**) Extract a slice from a list.
+; Given two indices, I and K, the slice is the list containing the elements 
+; between the I'th and K'th element of the original list (both limits included).
+; Start counting the elements with 1.
+; Example:
+; * (slice '(a b c d e f g h i k) 3 7)
+; (C D E F G)
+(defn slice-a-list
+  "Returns a slice of a list based on indices provided."
+  [l i k]
+  (loop [s l result [] index 0]
+    (if-not (seq s)
+      result
+      (if-not (and (>= index (dec i)) (< index k))
+        (recur (rest s) result (inc index))
+        (recur (rest s) (conj result (first s)) (inc index)))))) 
+
+; P19 (**) Rotate a list N places to the left.
+; Examples:
+; * (rotate '(a b c d e f g h) 3)
+; (D E F G H A B C)
+; * (rotate '(a b c d e f g h) -2)
+; (G H A B C D E F)
+(defn rotate-to-left
+  "Rotates a list n places to the left."
+  [l n]
+  (let [a (if (< n 0) (- (number-of-items l) (Math/abs n)) n)]
+    (loop [s l index 0 first-part [] second-part []]
+      (if-not (seq s)
+        (into [] (concat second-part first-part))
+        (if (<= index (dec a))
+          (recur (rest s) 
+                 (inc index) 
+                 (conj first-part (first s)) 
+                 second-part)
+          (recur (rest s) 
+                 (inc index) 
+                 first-part 
+                 (conj second-part (first s))))))))
+
+; P20 (*) Remove the K'th element from a list.
+; Example:
+; * (remove-at '(a b c d) 2)
+; (A C D)
+(defn remove-nth-element
+  "Removes the nth element from a list."
+  [l n]
+  (loop [s l result [] index 0]
+    (if-not (seq s)
+      result
+      (recur (rest s)
+             (if-not (= index (dec n))
+               (conj result (first s))
+               result)
+             (inc index)))))
+
+; P21 (*) Insert an element at a given position into a list.
+; Example:
+; * (insert-at 'alfa '(a b c d) 2)
+; (A ALFA B C D)
+(defn insert-at-position
+  "Inserts an element at a given position of the list."
+  [n l item]
+  (loop [s l result [] index 0]
+    (if-not (seq s)
+      result
+      (recur (rest s)
+             (if (= index (dec n))
+               (conj result item (first s))
+               (conj result (first s)))
+             (inc index)))))
+
+; P22 (*) Create a list containing all integers within a given range.
+; If first argument is smaller than second, produce a list in decreasing order.
+; Example:
+; * (range 4 9)
+; (4 5 6 7 8 9)
+(defn range-of-numbers
+  "Returns a range of numbers within the range limits provided."
+  [m n]
+  (loop [index m result []]
+    (if (= index n)
+      (conj result index)
+      (recur (if (< m n) (inc index) (dec index))
+             (conj result index)))))
+
+; P23 (**) Extract a given number of randomly selected elements from a list.
+; The selected items shall be returned in a list.
+; Example:
+; * (rnd-select '(a b c d e f g h) 3)
+; (E D A)
+(defn random-select
+  "Returns a list of randomly selected elements from a list."
+  [l n]
+  (let [count (number-of-items l)]
+    (loop [s l result [] index 0]
+      (if (>= index n)
+        result
+        (recur (rest s)
+               (conj result (nth-item (rand-int count) l))
+               (inc index))))))
+
+; P24 (*) Lotto: Draw N different random numbers from the set 1..M.
+; The selected numbers shall be returned in a list.
+; Example:
+; * (lotto-select 6 49)
+; (23 1 17 33 21 37)
+; Hint: Combine the solutions of problems P22 and P23.
+(defn lotto-draw
+  "Returns a list of random numbers from a range of numbers."
+  [n m]
+  (random-select (range-of-numbers 1 m) n))
+
+; P25 (*) Generate a random permutation of the elements of a list.
+; Example:
+; * (rnd-permu '(a b c d e f))
+; (B A D C E F)
+; Hint: Use the solution of problem P23.
+(defn random-permutation
+  "Returns a random permutation of a list."
+  [l]
+  (random-select l (number-of-items l)))
