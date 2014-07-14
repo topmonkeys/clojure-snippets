@@ -35,12 +35,12 @@
 ; Example:
 ; * (element-at '(a b c d e) 3)
 ; C
-(defn nth-item
+(defn item-at
   "Returns the nth item from the list."
   [n l]
   (loop [i 0 s l]
     (when (seq s)
-      (if (= i n)
+      (if-not (< i (dec n))
         (first s)
         (recur (inc i) (rest s))))))
                
@@ -377,12 +377,14 @@
 (defn random-select
   "Returns a list of randomly selected elements from a list."
   [l n]
-  (let [count (number-of-items l)]
-    (loop [s l result [] index 0]
-      (if (>= index n)
-        result
-        (recur (rest s)
-               (conj result (nth-item (rand-int count) l))
+  (loop [s l result [] index 0]
+    (if-not (< index n)
+      result
+      (let [count (number-of-items s)
+            i (rand-int count)
+            r (item-at (inc i) s)]
+        (recur (remove-nth-element s (inc i)) 
+               (conj result r)
                (inc index))))))
 
 ; P24 (*) Lotto: Draw N different random numbers from the set 1..M.
